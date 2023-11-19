@@ -1,22 +1,19 @@
 import { Button, Dialog, TextField } from "@mui/material";
-import { ChangeEvent, useState } from "react";
+import axios from "axios";
+import { ChangeEvent, useEffect, useState } from "react";
+import { text } from "stream/consumers";
 
-interface IPost {
-  text: string;
-  id: number;
-}
-
-const Posts = () => {
+const FetchPosts = () => {
   const [inputValue, setInputValue] = useState<string>("");
-  const [posts, setPosts] = useState<IPost[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [editedPost, setEditedPost] = useState<IPost>({ id: 0, text: "" });
+  const [editedPost, setEditedPost] = useState<any>({ id: 0, text: "" });
 
-  const savePost = () => {
-    setPosts([...posts, { id: Math.random() * 10000000, text: inputValue }]);
-  };
+  useEffect(() => {
+    getPosts();
+  }, []);
 
-  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onChange = (event: any) => {
     setInputValue(event.target.value);
   };
 
@@ -24,35 +21,51 @@ const Posts = () => {
     setEditedPost({ ...editedPost, text: event.target.value });
   };
 
-  const onDelete = (id: number) => {
-    const newPosts = posts.filter((post) => post.id !== id);
-
-    setPosts(newPosts);
+  const onSave = async () => {
+    await axios.post("https://6559da7b6981238d054ce4f7.mockapi.io/posts", {
+      text: inputValue,
+    });
+    getPosts();
   };
 
-  const onClickEdit = (post: IPost) => {
-    setEditedPost(post);
-    setIsOpen(true);
+  const getPosts = async () => {
+    const posts = (
+      await axios.get("https://6559da7b6981238d054ce4f7.mockapi.io/posts")
+    ).data;
+    setPosts(posts);
+  };
+
+  const onDelete = async (id: number) => {
+    await axios.delete(
+      `https://6559da7b6981238d054ce4f7.mockapi.io/posts/${id}`
+    );
+    getPosts();
+  };
+
+  const saveEdited = async (id: number) => {
+    await axios.put(
+      `https://6559da7b6981238d054ce4f7.mockapi.io/posts/${editedPost.id}`,
+      { text: editedPost.text }
+    );
+    getPosts();
+    setIsOpen(false);
   };
 
   const onClose = () => {
     setIsOpen(false);
   };
 
-  const saveEdited = () => {
-    const newPosts = posts.map((post) =>
-      post.id === editedPost.id ? editedPost : post
-    );
-    setPosts(newPosts);
-    setIsOpen(false);
+  const onClickEdit = (post: any) => {
+    setEditedPost(post);
+    setIsOpen(true);
   };
 
   return (
     <div>
-      <h1 className="text-center">Posts</h1>
-      <div className="input-wrap">
+      <h1>Fetch Posts</h1>
+      <div>
         <input onChange={onChange} type="text" />
-        <button onClick={savePost}>Сохранить пост</button>
+        <button onClick={onSave}>Сохранить пост</button>
       </div>
       {posts.map((post) => {
         return (
@@ -84,4 +97,4 @@ const Posts = () => {
   );
 };
 
-export default Posts;
+export default FetchPosts;
